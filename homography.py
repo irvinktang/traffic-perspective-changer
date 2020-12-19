@@ -5,18 +5,6 @@ import time
 import os
 
 def homography(input_video, outputdetect, outputgraph, yolo, pts_src):
-    # ap = argparse.ArgumentParser()
-    # ap.add_argument("-i", "--input", required=True, help="path to input video")
-    # ap.add_argument("-od", "--outputdetect", required=True, help="path to output video")
-    # ap.add_argument("-og", "--outputgraph", required=True, help="path to output ")
-    # ap.add_argument("-y", "--yolo", required=True,
-    #                 help="base path to YOLO directory")
-    # ap.add_argument("-c", "--confidence", type=float, default=0.5,
-    #                 help="minimum probability to filter weak detection")
-    # ap.add_argument("-t", "--threshold", type=float, default=0.3,
-    #                 help="threshold when applying non-maxima suppression")
-    # args = vars(ap.parse_args())
-
     # load COCO class labels
     labelsPath = os.path.sep.join([yolo, "coco.names"])
     LABELS = open(labelsPath).read().strip().split("\n")
@@ -61,25 +49,43 @@ def homography(input_video, outputdetect, outputgraph, yolo, pts_src):
         ret, frame = cap.read()
 
         # pass these in next time as a command line argument
-        newsize = (4000,6000,3)
-        size = (20,100,3)  
+        newsize = (3000,3000,3)
+        size = (50,50,3) 
 
         im_dst = np.zeros(newsize, np.uint8)
 
         # points the source will get mapped to
         pts_dst = np.array([
-            [800,800],
-            [800+size[0]-1,800],
-            [800+size[0]-1,800+size[1]-1],
-            [800,800+size[1]-1]],dtype=float)
+            [newsize[0]/2-size[0]/2,newsize[0]/2-size[0]/2],
+            [newsize[0]/2+size[0]/2,newsize[0]/2-size[0]/2],
+            [newsize[0]/2+size[0]/2,newsize[0]/2+size[0]/2],
+            [newsize[0]/2-size[0]/2,newsize[0]/2+size[0]/2],
+        ], dtype=float)
 
         h, status = cv2.findHomography(pts_src, pts_dst)
+
+        # get size of frame 
+        frame_size = frame.shape
+        
+        original_corners = np.array([
+            [0,0], [0, frame_size[0]], [frame_size[1], frame_size[0]], [frame_size[1], 0]
+        ])
+        new_corners = np.empty([0,2])
+
+        for corner in original_corners:
+            new_corner = np.dot(np.append(corner, [1]), h)
+            new_corners = np.append(new_corners, np.ceil([new_corner[:2]]), axis=0)
+
+        new_height = np.max(new_corners[:,1])-np.min(new_corners[:,1])
+        new_width = np.max(new_corners[:,0])-np.min(new_corners[:,0])
+
+        newsize = (int(new_width), int(new_height), 3)
 
         # translation matrix to get points within view
         # calculate this based on warped perspective next time
         t = np.array([
-            [1,0,100],
-            [0,1,3000],
+            [1,0,-np.abs(np.min(new_corners[:,0]))],
+            [0,1,-np.abs(np.min(new_corners[:,1]))],
             [0,0,1]
         ])
 
@@ -160,7 +166,6 @@ def homography(input_video, outputdetect, outputgraph, yolo, pts_src):
                     cv2.putText(frame, text, (x, y-5),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-                    # TESTING
                     # apply homography on homogeneous center point
                     centerh = np.array([centers[i][0], centers[i][1], 1])
                     newcenter = np.dot(transform, centerh)
@@ -169,7 +174,7 @@ def homography(input_video, outputdetect, outputgraph, yolo, pts_src):
                         np.ceil(newcenter[1]/newcenter[2]).astype(int)), 15, color, -1)
             
             # resizing blackimage so that viewable area will fit on a screen
-            newimage = cv2.resize(blackimage, (width//2, height//2))
+            newimage = cv2.resize(blackimage, (newsize[0]//3, newsize[1]//3))
 
             if writerdetect is None or writergraph is None:
                 fourcc = cv2.VideoWriter_fourcc(*"MJPG")
@@ -177,14 +182,6 @@ def homography(input_video, outputdetect, outputgraph, yolo, pts_src):
                     (frame.shape[1], frame.shape[0]), True)
                 writergraph = cv2.VideoWriter(outputgraph, fourcc, 30,
                     (newimage.shape[1], newimage.shape[0]), True)
-                # writerdetect = cv2.VideoWriter('/tmp/results/{}'.format(outputdetect), fourcc, 30,
-                #     (frame.shape[1], frame.shape[0]), True)
-                # writergraph = cv2.VideoWriter('/tmp/results/{}'.format(outputgraph), fourcc, 30,
-                #     (newimage.shape[1], newimage.shape[0]), True)
-                    # writerdetect = cv2.VideoWriter('/tmp/results/detect.avi', fourcc, 30,
-                    #     (frame.shape[1], frame.shape[0]), True)
-                    # writergraph = cv2.VideoWriter('/tmp/results/graph.avi', fourcc, 30,
-                    #     (newimage.shape[1], newimage.shape[0]), True)
                 print('/tmp/results/{}'.format(outputdetect))
 
                 # some information on processing single frame
