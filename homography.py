@@ -19,7 +19,7 @@ def homography(input_video, outputdetect, outputgraph, yolo, pts_src):
     # args = vars(ap.parse_args())
 
     # load COCO class labels
-    labelsPath = os.path.sep.join([yolo, "data/coco.names"])
+    labelsPath = os.path.sep.join([yolo, "coco.names"])
     LABELS = open(labelsPath).read().strip().split("\n")
 
     # assigning random colors to represent classes
@@ -27,7 +27,7 @@ def homography(input_video, outputdetect, outputgraph, yolo, pts_src):
     COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
 
     weightsPath = os.path.sep.join([yolo, "yolov3.weights"])
-    configPath = os.path.sep.join([yolo, "cfg/yolov3.cfg"])
+    configPath = os.path.sep.join([yolo, "yolov3.cfg"])
 
     print("[INFO] loading YOLO from disk...")
     net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
@@ -36,10 +36,7 @@ def homography(input_video, outputdetect, outputgraph, yolo, pts_src):
 
     # initialize video stream
     print("[INFO] loading file from disk...")
-    # cap = cv2.VideoCapture(os.path.join('/home/irvin', input_video))
-    # cap = cv2.VideoCapture('/tmp/{}'.format(input_video))
-    video = '/tmp/{}'.format(input_video)
-    cap = cv2.VideoCapture(video)
+    cap = cv2.VideoCapture(input_video)
     writerdetect = None
     writergraph = None
     width, height = (None, None)
@@ -177,10 +174,14 @@ def homography(input_video, outputdetect, outputgraph, yolo, pts_src):
 
             if writerdetect is None or writergraph is None:
                 fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-                writerdetect = cv2.VideoWriter('/tmp/results/{}'.format(outputdetect), fourcc, 30,
+                writerdetect = cv2.VideoWriter(outputdetect, fourcc, 30,
                     (frame.shape[1], frame.shape[0]), True)
-                writergraph = cv2.VideoWriter('/tmp/results/{}'.format(outputgraph), fourcc, 30,
+                writergraph = cv2.VideoWriter(outputgraph, fourcc, 30,
                     (newimage.shape[1], newimage.shape[0]), True)
+                # writerdetect = cv2.VideoWriter('/tmp/results/{}'.format(outputdetect), fourcc, 30,
+                #     (frame.shape[1], frame.shape[0]), True)
+                # writergraph = cv2.VideoWriter('/tmp/results/{}'.format(outputgraph), fourcc, 30,
+                #     (newimage.shape[1], newimage.shape[0]), True)
                     # writerdetect = cv2.VideoWriter('/tmp/results/detect.avi', fourcc, 30,
                     #     (frame.shape[1], frame.shape[0]), True)
                     # writergraph = cv2.VideoWriter('/tmp/results/graph.avi', fourcc, 30,

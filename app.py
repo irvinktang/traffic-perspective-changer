@@ -8,10 +8,12 @@ from homography import homography
 
 app = Flask(__name__)
 app.secret_key = '123141421sadqweqed'
-UPLOAD_FOLDER = '/tmp/'
-RESULTS_FOLDER = '/tmp/results/'
+UPLOAD_FOLDER = 'tmp/input/'
+RESULTS_FOLDER = 'tmp/output/'
+YOLO_FOLDER = 'yolo/'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['RESULTS_FOLDER'] = RESULTS_FOLDER
+app.config['YOLO_FOLDER'] = YOLO_FOLDER
 
 @app.route('/')
 def home_page():
@@ -23,8 +25,11 @@ def transform_page():
     if request.method == 'POST':
         file = request.files['video']
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        cap = cv2.VideoCapture(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        print(filename)
+        filepath = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        print("file saved")
+        cap = cv2.VideoCapture(filepath)
         frame = cap.read()[1]
         frame_buff = cv2.imencode('.jpg', frame)[1]
         b64 = base64.b64encode(frame_buff)
@@ -34,10 +39,11 @@ def transform_page():
 
 @app.route('/transform_success', methods=['POST'])
 def perform_homography():
-    video = request.form['filename'][:-1]
-    outputdetect = 'detect.avi'
-    outputgraph = 'graph.avi'
-    yolo = os.path.abspath('/home/irvin/Documents/code/darknet')
+    filename = request.form['filename'][:-1]
+    video = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], filename)
+    yolo = os.path.join(app.root_path, app.config['YOLO_FOLDER'])
+    outputdetect = os.path.join(app.root_path, app.config['RESULTS_FOLDER'],'detect.avi')
+    outputgraph = os.path.join(app.root_path, app.config['RESULTS_FOLDER'],'graph.avi')
     pts_src = []
     points = [float(x) for x in request.form['points'].split(',')]
     for i in range(0, len(points),2):
