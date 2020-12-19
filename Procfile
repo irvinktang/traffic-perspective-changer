@@ -1,2 +1,2 @@
-web: mkdir /app/tmp/; mkdir /app/tmp/input; mkdir /app/tmp/output; gunicorn app:app
+web: mkdir tmp/; mkdir tmp/input; mkdir tmp/output; gunicorn app:app
  
