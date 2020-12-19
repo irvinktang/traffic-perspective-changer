@@ -8,9 +8,9 @@ verify_ssl = true
 [packages]
 flask = "*"
 gunicorn = "*"
-opencv-python = "*"
 scikit-build = "*"
 imutils = "*"
+opencv-python-headless = "*"
 
 [requires]
 python_version = "3.8"

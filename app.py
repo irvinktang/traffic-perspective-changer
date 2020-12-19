@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, url_for
+from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 from cv2 import cv2
 import base64
@@ -40,10 +40,11 @@ def transform_page():
 @app.route('/transform_success', methods=['POST'])
 def perform_homography():
     filename = request.form['filename'][:-1]
+    resultspath = os.path.join(app.root_path, app.config['RESULTS_FOLDER'])
     video = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], filename)
     yolo = os.path.join(app.root_path, app.config['YOLO_FOLDER'])
-    outputdetect = os.path.join(app.root_path, app.config['RESULTS_FOLDER'],'detect.avi')
-    outputgraph = os.path.join(app.root_path, app.config['RESULTS_FOLDER'],'graph.avi')
+    outputdetect = os.path.join(resultspath,'detect.avi')
+    outputgraph = os.path.join(resultspath,'graph.avi')
     pts_src = []
     points = [float(x) for x in request.form['points'].split(',')]
     for i in range(0, len(points),2):
@@ -52,4 +53,9 @@ def perform_homography():
     pts_src = np.vstack(pts_src).astype(float)
     homography(video, outputdetect, outputgraph, yolo, pts_src)
     
-    return render_template('results.html')
+    return render_template('results.html', detect='detect.avi', graph='graph.avi')
+
+@app.route('/download/<path:filename>')
+def get_videos(filename):
+    path = os.path.join(app.root_path, app.config['RESULTS_FOLDER'])
+    return send_from_directory(path, filename, as_attachment=True)
