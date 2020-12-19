@@ -1,4 +1,3 @@
 web: gunicorn app:app
-
-mkdir /app/tmp/input
-mkdir /app/tmp/output
+worker: mkdir /app/tmp/input
+worker: mkdir /app/tmp/output
